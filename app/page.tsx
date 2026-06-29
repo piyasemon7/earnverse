@@ -168,13 +168,22 @@ export default function Home() {
           .select('category')
           .eq('status', 'published');
 
-        const cats = [...new Set(
-          (allPosts || [])
-            .map((p: { category: string }) => p.category)
-            .filter(Boolean)
-        )];
+const dbCats = [...new Set(
+  (allPosts || [])
+    .map((p: { category: string }) => p.category)
+    .filter(Boolean)
+)];
 
-        setCategories(cats);
+// DB-তে post না থাকলেও এই categories সবসময় দেখাবে
+const fixedCats = [
+  'Freelancing', 'Income Tips', 'Digital Marketing',
+  'Make Money Online', 'YouTube Tips', 'Blogging',
+  'SEO', 'Affiliate Marketing', 'Fiverr', 'Upwork',
+  'Passive Income', 'Social Media', 'Content Writing',
+];
+
+const cats = [...new Set([...dbCats, ...fixedCats])];
+setCategories(cats);
 
         if (cats.length) {
           setActiveCategory(cats[0]);
