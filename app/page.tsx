@@ -22,31 +22,54 @@ interface Post {
 
 // ─── Category colours ────────────────────────────────────
 const catColor: Record<string, string> = {
-  Freelancing: '#6c63ff',
-  YouTube: '#ff4444',
-  Blogging: '#00b894',
-  'Digital Marketing': '#fdcb6e',
-  Affiliate: '#e17055',
-  'Income Tips': '#0984e3',
-  SEO: '#a29bfe',
-  'Make Money Online': '#fd79a8',
+  'Freelancing':         '#6c63ff',
+  'YouTube Tips':        '#ff4444',
+  'Blogging':            '#00b894',
+  'Digital Marketing':   '#fdcb6e',
+  'Affiliate Marketing': '#e17055',
+  'Income Tips':         '#0984e3',
+  'SEO':                 '#a29bfe',
+  'Make Money Online':   '#fd79a8',
+  'Fiverr':              '#1dbf73',
+  'Upwork':              '#14a800',
+  'Passive Income':      '#f9ca24',
+  'Content Writing':     '#6ab04c',
+  'Social Media':        '#e056fd',
+  'Email Marketing':     '#30336b',
+  'Google AdSense':      '#4285f4',
+  'Dropshipping':        '#eb4d4b',
+  'Amazon FBA':          '#f0932b',
+  'Graphic Design':      '#be2edd',
+  'Web Development':     '#0652DD',
 };
+
 const catEmoji: Record<string, string> = {
-  Freelancing: '💼',
-  YouTube: '🎬',
-  Blogging: '✍️',
-  'Digital Marketing': '📊',
-  Affiliate: '🤝',
-  'Income Tips': '💰',
-  SEO: '🔍',
-  'Make Money Online': '💵',
+  'Freelancing':         '💼',
+  'YouTube Tips':        '🎬',
+  'Blogging':            '✍️',
+  'Digital Marketing':   '📊',
+  'Affiliate Marketing': '🤝',
+  'Income Tips':         '💰',
+  'SEO':                 '🔍',
+  'Make Money Online':   '💵',
+  'Fiverr':              '🟢',
+  'Upwork':              '🔵',
+  'Passive Income':      '💤',
+  'Content Writing':     '📝',
+  'Social Media':        '📱',
+  'Email Marketing':     '📧',
+  'Google AdSense':      '💲',
+  'Dropshipping':        '📦',
+  'Amazon FBA':          '🛒',
+  'Graphic Design':      '🎨',
+  'Web Development':     '💻',
 };
 
 // ─── Hero Slider data (static) ────────────────────────────
 const slides = [
   { title: "Learn & Earn Online 💰", desc: "Discover the best ways to earn money online through freelancing, blogging, and digital skills.", bg: "linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)", btn: "Start Earning Today", href: "/category/freelancing" },
   { title: "Master Freelancing 🚀", desc: "Build a successful freelancing career on Upwork, Fiverr and other top platforms worldwide.", bg: "linear-gradient(135deg,#0d0d1a 0%,#1a1a2e 50%,#2d1b69 100%)", btn: "Explore Freelancing", href: "/category/freelancing" },
-  { title: "Grow on YouTube 🎬", desc: "Learn how to create viral content, grow subscribers and monetize your YouTube channel.", bg: "linear-gradient(135deg,#1a0a0a 0%,#2d1010 50%,#1a1a2e 100%)", btn: "YouTube Guide", href: "/category/youtube" },
+  { title: "Grow on YouTube 🎬", desc: "Learn how to create viral content, grow subscribers and monetize your YouTube channel.", bg: "linear-gradient(135deg,#1a0a0a 0%,#2d1010 50%,#1a1a2e 100%)", btn: "YouTube Guide", href: "/category/youtube-tips" },
   { title: "Start Blogging Today ✍️", desc: "Create a profitable blog, write SEO content and earn passive income through blogging.", bg: "linear-gradient(135deg,#0a1a0a 0%,#102d10 50%,#1a1a2e 100%)", btn: "Blogging Tips", href: "/category/blogging" },
 ];
 
@@ -139,16 +162,23 @@ export default function Home() {
           .limit(6);
         setTrendingPosts(trnd || []);
 
-        // All categories
+        // All categories — Supabase থেকে unique category list
         const { data: allPosts } = await supabase
           .from('blog_posts')
           .select('category')
           .eq('status', 'published');
-        const cats = [...new Set((allPosts || []).map((p: { category: string }) => p.category).filter(Boolean))];
+
+        const cats = [...new Set(
+          (allPosts || [])
+            .map((p: { category: string }) => p.category)
+            .filter(Boolean)
+        )];
+
         setCategories(cats);
+
         if (cats.length) {
           setActiveCategory(cats[0]);
-          fetchCategoryPosts(cats[0]);
+          await fetchCategoryPosts(cats[0]);
         }
       } catch (e) {
         console.error(e);
@@ -158,6 +188,7 @@ export default function Home() {
     fetchData();
   }, []);
 
+  // ── Fetch 9 posts for selected category ──
   async function fetchCategoryPosts(cat: string) {
     const { data } = await supabase
       .from('blog_posts')
@@ -165,15 +196,16 @@ export default function Home() {
       .eq('category', cat)
       .eq('status', 'published')
       .order('created_at', { ascending: false })
-      .limit(6);
+      .limit(9); // ৯টি পোস্ট
     setCategoryPosts(data || []);
   }
 
   function handleCategoryChange(cat: string) {
+    if (cat === activeCategory) return;
     setAnimating(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       setActiveCategory(cat);
-      fetchCategoryPosts(cat);
+      await fetchCategoryPosts(cat);
       setAnimating(false);
     }, 300);
   }
@@ -186,6 +218,11 @@ export default function Home() {
 
   const color = catColor[activeCategory] || '#6c63ff';
   const emoji = catEmoji[activeCategory] || '📂';
+
+  // ── Category slug for URL ──
+  function getCategorySlug(cat: string) {
+    return cat.toLowerCase().replace(/ /g, '-');
+  }
 
   return (
     <main>
@@ -230,46 +267,173 @@ export default function Home() {
         )}
       </div>
 
-      {/* ── Category Section ── */}
+      {/* ══════════════════════════════════════════
+          ── Category Section (Updated) ──
+      ══════════════════════════════════════════ */}
       <div style={{ padding: '60px 40px', background: '#0d0d1a' }}>
-        <h2 style={{ textAlign: 'center', color: '#FFD700', fontSize: '32px', marginBottom: '8px', fontWeight: 'bold' }}>📂 Browse by Category</h2>
-        <p style={{ textAlign: 'center', color: '#aaa', marginBottom: '35px', fontSize: '16px' }}>Select a category to explore related posts</p>
+        <h2 style={{ textAlign: 'center', color: '#FFD700', fontSize: '32px', marginBottom: '8px', fontWeight: 'bold' }}>
+          📂 Browse by Category
+        </h2>
+        <p style={{ textAlign: 'center', color: '#aaa', marginBottom: '35px', fontSize: '16px' }}>
+          Select a category to explore related posts
+        </p>
 
-        {/* Tabs */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '40px' }}>
-          {categories.map(cat => {
-            const isActive = activeCategory === cat;
-            const c = catColor[cat] || '#6c63ff';
-            return (
-              <button key={cat} onClick={() => handleCategoryChange(cat)} style={{ padding: '10px 24px', background: isActive ? c : '#1a1a2e', color: isActive ? 'white' : '#aaa', border: `2px solid ${isActive ? c : '#333'}`, borderRadius: '30px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.3s', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                {catEmoji[cat] || '📂'} {cat}
-              </button>
-            );
-          })}
-        </div>
+        {/* ── Category Tabs — Supabase থেকে Dynamic ── */}
+        {categories.length === 0 && !loading ? (
+          <p style={{ textAlign: 'center', color: '#aaa' }}>কোনো category পাওয়া যায়নি।</p>
+        ) : (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '40px' }}>
+            {categories.map(cat => {
+              const isActive = activeCategory === cat;
+              const c = catColor[cat] || '#6c63ff';
+              return (
+                <button
+                  key={cat}
+                  onClick={() => handleCategoryChange(cat)}
+                  style={{
+                    padding: '9px 20px',
+                    background: isActive ? c : '#1a1a2e',
+                    color: isActive ? 'white' : '#aaa',
+                    border: `2px solid ${isActive ? c : '#333'}`,
+                    borderRadius: '30px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  {catEmoji[cat] || '📂'} {cat}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
-        {/* Posts grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '25px', maxWidth: '1500px', margin: '0 auto', opacity: animating ? 0 : 1, transition: 'opacity 0.3s' }}>
-          {categoryPosts.map(post => (
-            <a key={post.id} href={`/blog/${post.slug}`} style={{ background: '#1a1a2e', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer', border: `1px solid ${color}33`, transition: 'transform 0.2s, box-shadow 0.2s', textDecoration: 'none', display: 'block' }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.boxShadow = `0 10px 25px ${color}44`; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
-              {post.image_url && <img src={post.image_url} alt={post.title} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />}
-              <div style={{ padding: '15px' }}>
-                <span style={{ background: color, color: 'white', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>{emoji} {activeCategory}</span>
-                <h3 style={{ color: '#FFD700', fontSize: '15px', fontWeight: 'bold', margin: '10px 0 8px', lineHeight: '1.4' }}>{post.title}</h3>
-                <p style={{ color: '#aaa', fontSize: '13px', lineHeight: '1.6', margin: 0 }}>{post.content?.slice(0, 100)}…</p>
-              </div>
-            </a>
-          ))}
-        </div>
+        {/* ── Posts Grid — ৯টি ── */}
+        {loading ? (
+          <p style={{ textAlign: 'center', color: '#aaa' }}>Loading…</p>
+        ) : categoryPosts.length === 0 ? (
+          <p style={{ textAlign: 'center', color: '#aaa' }}>
+            এই category-তে এখনো কোনো post নেই।
+          </p>
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '25px',
+              maxWidth: '1500px',
+              margin: '0 auto',
+              opacity: animating ? 0 : 1,
+              transition: 'opacity 0.3s',
+            }}
+          >
+            {categoryPosts.map(post => (
+              <a
+                key={post.id}
+                href={`/blog/${post.slug}`}
+                style={{
+                  background: '#1a1a2e',
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  border: `1px solid ${color}33`,
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  textDecoration: 'none',
+                  display: 'block',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-5px)';
+                  e.currentTarget.style.boxShadow = `0 10px 25px ${color}44`;
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                {post.image_url ? (
+                  <img
+                    src={post.image_url}
+                    alt={post.title}
+                    style={{ width: '100%', height: '180px', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '180px',
+                      background: `${color}22`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '50px',
+                    }}
+                  >
+                    {emoji}
+                  </div>
+                )}
+                <div style={{ padding: '15px' }}>
+                  <span
+                    style={{
+                      background: color,
+                      color: 'white',
+                      padding: '3px 10px',
+                      borderRadius: '20px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    {emoji} {activeCategory}
+                  </span>
+                  <h3
+                    style={{
+                      color: '#FFD700',
+                      fontSize: '15px',
+                      fontWeight: 'bold',
+                      margin: '10px 0 8px',
+                      lineHeight: '1.4',
+                    }}
+                  >
+                    {post.title}
+                  </h3>
+                  <p style={{ color: '#aaa', fontSize: '13px', lineHeight: '1.6', margin: 0 }}>
+                    {post.content?.slice(0, 100)}…
+                  </p>
+                </div>
+              </a>
+            ))}
+          </div>
+        )}
 
-        {/* Read More */}
+        {/* ── Read More Button — Active ── */}
         {activeCategory && (
           <div style={{ textAlign: 'center', marginTop: '40px' }}>
-            <a href={`/category/${activeCategory.toLowerCase().replace(/ /g, '-')}`} style={{ display: 'inline-block', padding: '13px 40px', background: 'transparent', color: '#FFD700', border: '2px solid #FFD700', borderRadius: '30px', fontSize: '16px', fontWeight: 'bold', textDecoration: 'none', transition: 'all 0.3s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#FFD700'; (e.currentTarget as HTMLAnchorElement).style.color = '#1a1a2e'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent'; (e.currentTarget as HTMLAnchorElement).style.color = '#FFD700'; }}>
+            <a
+              href={`/category/${getCategorySlug(activeCategory)}`}
+              style={{
+                display: 'inline-block',
+                padding: '13px 40px',
+                background: 'transparent',
+                color: '#FFD700',
+                border: '2px solid #FFD700',
+                borderRadius: '30px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                textDecoration: 'none',
+                transition: 'all 0.3s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLAnchorElement).style.background = '#FFD700';
+                (e.currentTarget as HTMLAnchorElement).style.color = '#1a1a2e';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLAnchorElement).style.background = 'transparent';
+                (e.currentTarget as HTMLAnchorElement).style.color = '#FFD700';
+              }}
+            >
               Read More {activeCategory} Posts →
             </a>
           </div>
@@ -376,65 +540,63 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Trending Topics */}
-<div style={{padding: '50px 40px', background: '#1a1a2e'}}>
-  <div style={{maxWidth: '1500px', margin: '0 auto'}}>
-    <h2 style={{textAlign: 'center', color: '#FFD700', fontSize: '32px', fontWeight: 'bold', marginBottom: '8px'}}>
-      🔥 Trending Topics
-    </h2>
-    <p style={{textAlign: 'center', color: '#aaa', marginBottom: '35px', fontSize: '16px'}}>
-      Hot topics everyone is reading right now
-    </p>
-    <div style={{display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center'}}>
-      {[
-        { tag: "Freelancing", count: "245", color: "#6c63ff", href: "/category/freelancing" },
-        { tag: "Make Money Online", count: "189", color: "#e17055", href: "/category/make-money-online" },
-        { tag: "YouTube Tips", count: "167", color: "#ff4444", href: "/category/youtube-tips" },
-        { tag: "Blogging", count: "156", color: "#00b894", href: "/category/blogging" },
-        { tag: "Affiliate Marketing", count: "143", color: "#fdcb6e", href: "/category/affiliate-marketing" },
-        { tag: "SEO", count: "138", color: "#0984e3", href: "/category/seo" },
-        { tag: "Digital Marketing", count: "124", color: "#a29bfe", href: "/category/digital-marketing" },
-        { tag: "Fiverr", count: "118", color: "#fd79a8", href: "/category/fiverr" },
-        { tag: "Upwork", count: "112", color: "#55efc4", href: "/category/upwork" },
-        { tag: "Passive Income", count: "108", color: "#ffeaa7", href: "/category/passive-income" },
-        { tag: "Content Writing", count: "98", color: "#fab1a0", href: "/category/content-writing" },
-        { tag: "Social Media", count: "95", color: "#74b9ff", href: "/category/social-media" },
-        { tag: "Email Marketing", count: "87", color: "#a29bfe", href: "/category/email-marketing" },
-        { tag: "Google AdSense", count: "83", color: "#00cec9", href: "/category/google-adsense" },
-        { tag: "Dropshipping", count: "76", color: "#e17055", href: "/category/dropshipping" },
-        { tag: "Amazon FBA", count: "71", color: "#fdcb6e", href: "/category/amazon-fba" },
-        { tag: "Graphic Design", count: "68", color: "#fd79a8", href: "/category/graphic-design" },
-        { tag: "Web Development", count: "65", color: "#6c63ff", href: "/category/web-development" },
-      ].map((item, i) => (
-        <a key={i} href={item.href} style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '8px 18px', borderRadius: '25px',
-          background: `${item.color}22`,
-          border: `1px solid ${item.color}66`,
-          color: item.color, textDecoration: 'none',
-          fontSize: '14px', fontWeight: '500',
-          transition: 'all 0.3s'
-        }}
-        onMouseEnter={e => {
-          (e.currentTarget as HTMLAnchorElement).style.background = item.color;
-          (e.currentTarget as HTMLAnchorElement).style.color = '#1a1a2e';
-        }}
-        onMouseLeave={e => {
-          (e.currentTarget as HTMLAnchorElement).style.background = `${item.color}22`;
-          (e.currentTarget as HTMLAnchorElement).style.color = item.color;
-        }}>
-          # {item.tag}
-          <span style={{
-            background: `${item.color}33`, padding: '2px 8px',
-            borderRadius: '10px', fontSize: '11px'
-          }}>
-            {item.count}
-          </span>
-        </a>
-      ))}
-    </div>
-  </div>
-</div>
+      {/* ── Trending Topics ── */}
+      <div style={{ padding: '50px 40px', background: '#1a1a2e' }}>
+        <div style={{ maxWidth: '1500px', margin: '0 auto' }}>
+          <h2 style={{ textAlign: 'center', color: '#FFD700', fontSize: '32px', fontWeight: 'bold', marginBottom: '8px' }}>
+            🔥 Trending Topics
+          </h2>
+          <p style={{ textAlign: 'center', color: '#aaa', marginBottom: '35px', fontSize: '16px' }}>
+            Hot topics everyone is reading right now
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
+            {[
+              { tag: 'Freelancing',         color: '#6c63ff', href: '/category/freelancing' },
+              { tag: 'Make Money Online',   color: '#fd79a8', href: '/category/make-money-online' },
+              { tag: 'YouTube Tips',        color: '#ff4444', href: '/category/youtube-tips' },
+              { tag: 'Blogging',            color: '#00b894', href: '/category/blogging' },
+              { tag: 'Affiliate Marketing', color: '#e17055', href: '/category/affiliate-marketing' },
+              { tag: 'SEO',                 color: '#a29bfe', href: '/category/seo' },
+              { tag: 'Digital Marketing',   color: '#fdcb6e', href: '/category/digital-marketing' },
+              { tag: 'Fiverr',              color: '#1dbf73', href: '/category/fiverr' },
+              { tag: 'Upwork',              color: '#14a800', href: '/category/upwork' },
+              { tag: 'Passive Income',      color: '#f9ca24', href: '/category/passive-income' },
+              { tag: 'Content Writing',     color: '#6ab04c', href: '/category/content-writing' },
+              { tag: 'Social Media',        color: '#e056fd', href: '/category/social-media' },
+              { tag: 'Email Marketing',     color: '#74b9ff', href: '/category/email-marketing' },
+              { tag: 'Google AdSense',      color: '#4285f4', href: '/category/google-adsense' },
+              { tag: 'Dropshipping',        color: '#eb4d4b', href: '/category/dropshipping' },
+              { tag: 'Amazon FBA',          color: '#f0932b', href: '/category/amazon-fba' },
+              { tag: 'Graphic Design',      color: '#be2edd', href: '/category/graphic-design' },
+              { tag: 'Web Development',     color: '#0652DD', href: '/category/web-development' },
+            ].map((item, i) => (
+              <a
+                key={i}
+                href={item.href}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '8px 18px', borderRadius: '25px',
+                  background: `${item.color}22`,
+                  border: `1px solid ${item.color}66`,
+                  color: item.color, textDecoration: 'none',
+                  fontSize: '14px', fontWeight: '500',
+                  transition: 'all 0.3s',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLAnchorElement).style.background = item.color;
+                  (e.currentTarget as HTMLAnchorElement).style.color = '#1a1a2e';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLAnchorElement).style.background = `${item.color}22`;
+                  (e.currentTarget as HTMLAnchorElement).style.color = item.color;
+                }}
+              >
+                # {item.tag}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* ── Newsletter ── */}
       <div style={{ padding: '70px 40px', background: 'linear-gradient(135deg, #FFD700 0%, #f9a825 100%)' }}>
