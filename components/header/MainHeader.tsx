@@ -1,10 +1,25 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { FiMenu, FiSearch, FiUser, FiMapPin, FiShield, FiMoon, FiSun, FiGlobe } from 'react-icons/fi';
 
 export default function MainHeader() {
+  const router = useRouter();
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = () => {
+    const trimmed = searchQuery.trim();
+    if (trimmed.length === 0) return;
+    router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   return (
     <>
@@ -73,10 +88,20 @@ export default function MainHeader() {
         {/* Search Bar */}
         <div style={{flex: 1, display: 'flex', alignItems: 'center',
           background: '#0d0d1a', border: '1px solid #FFD700', borderRadius: '25px', padding: '6px 15px'}}>
-          <FiSearch color="#FFD700" style={{marginRight: '8px'}} />
-          <input placeholder="Search articles..." style={{
-            background: 'none', border: 'none', color: 'white', outline: 'none', width: '100%'
-          }} />
+          <FiSearch
+            color="#FFD700"
+            style={{marginRight: '8px', cursor: 'pointer'}}
+            onClick={handleSearch}
+          />
+          <input
+            placeholder="Search articles..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            style={{
+              background: 'none', border: 'none', color: 'white', outline: 'none', width: '100%'
+            }}
+          />
         </div>
 
         {/* Right Icons */}
